@@ -1,0 +1,270 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=800px, initial-scale=1.0">
+    <meta charset="utf-8">
+    <script src="https://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+    <script src="https://d19vzq90twjlae.cloudfront.net/leaflet-0.7.3/leaflet.js"></script>
+    <link rel="stylesheet" href="https://d19vzq90twjlae.cloudfront.net/leaflet-0.7.3/leaflet.css" />
+    <link rel="stylesheet" type="text/css" href="../static/style.css" />
+    <link rel="shortcut icon" href="#" />
+    <title>DayTrippr</title>
+</head>
+<body>
+    <div class="bg-img">
+        <div class="container">
+            <div class="form">
+                <form method="POST">
+                    <div class="lbl">
+                        <label for="starting_zip">What is your starting zipcode?</label>
+                        <br>
+                        <input id="starting_zip" type="text" name="starting_zip" value="30329">
+                    </div>
+                    <div class="lbl">
+                        <label for="leave_date">What date will you go? </label>
+                        <br>
+                        <input id="leave_date" type="date" name="leave_date" placeholder="select date" min="2020-11-20" max="2020-11-27">
+                    </div>
+                    <div class="lbl">
+                        <label for="adventure">What do you want to do? </label>
+                        <br>
+                        <select id="adventure" name="adventure">
+                            <option default>Select adventure</option>
+                            <option value="Circus & Specialty Acts">Circus & Specialty Acts</option>
+                            <option value="Comedy">Comedy</option>
+                            <option value="Community/Civic">Community/Civic</option>
+                            <option value="Family">Family</option>
+                            <option value="Family">Fine Art</option>
+                            <option value="Football">Football</option>
+                            <option value="Hiking">Hiking</option>
+                            <option value="Magic & Illusion">Magic & Illusion</option>
+                            <option value="Miscellaneous Theatre">Miscellaneous Theatre</option>
+                            <option value="Performance Art">Performance Art</option>
+                            <option value="Rock">Rock</option>
+                            <option value="Sauna">Sauna</option>
+                            <option value="Theatre">Theatre</option>
+                            <option value="THE CAROUSEL a covid-safe immersive">THE CAROUSEL a covid-safe immersive theatre experience at Dreamscapes</option>
+                        </select>
+                    </div>
+                    <div class="lbl">
+                        <label for="weather">What weather conditions are acceptable? </label>
+                        <br>
+                        <div>
+                            &#8239;<img src="../static/Sunny.png">&emsp;&emsp;&emsp; <img src="../static/Rainy.png">&emsp;&emsp;&emsp; <img src="../static/Windy.png">
+                            <br>&#8239; <small>Sun&emsp;&emsp;&emsp;&emsp;&#8239;Rain&emsp;&emsp;&emsp;&emsp;Wind</small>
+                            <br>&#8239;
+                            <input type="checkbox" id="sun" name="sun" value="sun">&emsp;&emsp;&#8239;&#8239;&#8239;&#8239;&#8239;&#8239;&#8239;
+                            <input type="checkbox" id="rain" name="rain" value="rain">&emsp;&emsp;&#8239;&#8239;&#8239;&emsp;
+                            <input type="checkbox" id="wind" name="wind" value="wind">
+                        </div>
+                    </div>
+                    <div class="lbl">
+                        <label for="drive_time">How far away are you willing to drive (hours)?</label>
+                        <div class="slider">
+                            <input id="drive_time" name="drive_time" type="range" min="0" max="5" onchange="updateRange(this.value);">
+                            <input type="hidden" id="dtime" name="dtime" value="">
+                        </div>
+                        <span id="DriveTimeValue">&#8239;0&emsp;&#8239;1&emsp;&#8239;2&emsp;&#8239;3&emsp;&#8239;4&emsp;&#8239;5</span>
+                    </div>
+                    <div class="lbl">
+                        <label for="spotify">We'll create a custom Spotify playlist</label>
+                        <img id="imagespotify" src="../static/spotify.png">
+                        <!--        <input id="Spotify" type="checkbox" />      -->
+                    </div>
+                    <br>
+                    <input type="submit" class="button" id="submit" value="Go" style="transition-duration: 0.4s; border: none; width:80px;
+					height:40px;" onclick="clearMapContainer('map-container');" />
+                </form>
+            </div>
+        </div>
+    </div>
+    <div id="visualization">
+        <div id="map-container"></div><!-- Must have an explicit height attribute! -->
+        <div id="map-legend"></div>
+    </div>
+
+    <script>
+        function updateRange(val) {
+          document.getElementById('dtime').value=val;
+		}
+
+		function clearMapContainer(mapcontainer) {
+            document.getElementById(mapcontainer).innerHTML = "";
+		}
+
+		function getPlayList(eventName, driveTime) {
+
+		}
+
+		// adapted from
+		// http://bl.ocks.org/williaster/95584ebda56f5345b709
+		var colorScale; // accessible in d3.csv() and makeEventMap()
+
+		d3.json('/get-filter', function(error, filterData)
+		{
+
+		// Load some data and add it to the map!
+		d3.csv('static/classified.csv', function(error, eventData) {
+			eventData = eventData.filter(function(d) {
+				if (filterData.event_type != '')
+				{
+					return d.event_type == filterData.event_type &
+						d.start_date == filterData.start_date &
+						d.est_drivetime_hours <= filterData.drive_time;
+				}
+				else
+				{
+					return d.start_date == filterData.start_date &
+						d.est_drivetime_hours <= filterData.drive_time;
+				}
+			})
+
+			if (filterData.wind == 'wind')
+			{
+				eventData = eventData.filter(function(d) {
+					if (d.windSpeed == '')
+					{
+						d.windSpeed = 0
+					}
+
+					return d.windSpeed > 0;
+				})
+			}
+
+			if (filterData.sun == 'sun' & filterData.rain == null)
+			{
+				eventData = eventData.filter(function(d) {
+					return d.precipChance <= 50;
+				})
+			}
+
+			if (filterData.sun == null & filterData.rain == 'rain')
+			{
+				eventData = eventData.filter(function(d) {
+					return d.precipChance > 50;
+				})
+			}
+
+
+			colorScale  = d3.scale.category10();
+
+			var radiusScale = d3.scale.linear()
+				.domain([0, d3.max(eventData, function(event) { return 1000; })])
+				.range([1, 10]);
+
+			var geoJSONEventFeatures = [];
+
+			eventData.forEach(function(event, i) {
+				var info = "<span style='color:" + colorScale(event.CR) + "'><b>" +
+							 event.name + "</b></span><br/>" +
+							 "<b>Address:</b> " + event.address + "<br> " +
+							 "<b>Description:</b> " + event.description + "<br> " +
+							 "<b>Weather:</b> " + event.narrative + "<br> " +
+					         "<b>Drive Time:</b> " + event.est_drivetime_hours.substring(0, 3) + " hours" + "<br> " +
+					"<img id='imagespotify' src='../static/spotify.png'>" +
+					"<input id='spotify' type='checkbox' onclick='getPlayList(event.name, event.est_drivetime_hours)' />"
+
+				var geoJSONFeature = {
+					"type": "Feature",
+					"properties": { // used to style marker below
+						"color":  colorScale(event.CR),
+						"radius": radiusScale(400),
+						"info":   info,
+						"date": event.start_date, //time.substring(0, 10),
+						"rain": event.precipChance,
+						"wind": event.windSpeed,
+						"drivetime": event.est_drivetime_hours,
+						"eventType": event.event_type
+					},
+					"geometry": {
+						"type": "Point",
+						"coordinates": [ +event.lon, +event.lat ] // note long lat!
+					}
+				};
+				geoJSONEventFeatures.push(geoJSONFeature);
+			});
+
+			// d3.select("#submit").on("click", function(d) {
+			makeEventMap(geoJSONEventFeatures);
+			// });
+		});
+
+		var makeEventMap = function(geoJSONEventFeatures, eventDate,eventSunny,eventRainy,eventWindy,eventDrivetime) {
+			// L = Leaflet name space, pass it the id of our container
+			// Define URL for fetching map tiles, and cite source
+			var map       = L.map("map-container"),
+				bwOsmURL  = "http://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png",
+				osmAttrs  = "Map data © <a href='http://openstreetmap.org'>OpenStreetMap</a>";
+
+			var osmTiles = new L.TileLayer(bwOsmURL, {
+				minZoom: 5,
+				maxZoom: 16,
+				attribution: osmAttrs
+			});
+
+			// Center view on ATL
+			var atlCoord  = new L.LatLng(33.8, -84.37);
+
+			map.setView(atlCoord, 8); // latlng, zoom level
+			map.addLayer(osmTiles);
+
+			L.geoJson(geoJSONEventFeatures, {
+				style: function (feature) {
+					return {
+						color:       '#000',
+						opacity:     0,
+						radius:      feature.properties.radius,
+						fillColor:   feature.properties.color,
+						fillOpacity: 0.7
+					};
+				},
+				onEachFeature: function (feature, layer) {
+					layer.bindPopup(feature.properties.info);
+				},
+				pointToLayer: function (feature, latlng) {
+					return L.circleMarker(latlng);
+				}
+				//,
+				//filter: function eventFilter(feature) {
+					  //if (feature.properties.date === "11/23/2020") return true
+					  //if (feature.properties.eventType = "Dance")
+					  //if (feature.properties.rainy === eventRainy) return true
+					  //if (feature.properties.windy === eventWindy) return true
+					  //if (feature.properties.drivetime === 3.0) return true
+				//}
+
+			}).addTo(map);
+
+			// Add legend with d3
+			var legendWidth  = 250,
+				legendHeight = 150;
+
+			var legend = d3.select('#map-legend').append('svg')
+				.attr('width', legendWidth)
+				.attr('height', legendHeight);
+
+			var legends = legend.selectAll(".legend")
+				.data(colorScale.domain())
+			  .enter().append("g")
+				.attr("class", "legend")
+				.attr("transform", function(d, i) { return "translate(0," + i * 20 + ")"; });
+
+			// draw legend colored rectangles
+			legends.append("rect")
+				.attr("x", legendWidth - 18)
+				.attr("width", 18)
+				.attr("height", 18)
+				.style("fill", colorScale);
+
+			// draw legend text
+			legends.append("text")
+				.attr("x", legendWidth - 24)
+				.attr("y", 9)
+				.attr("dy", ".35em")
+				.style("text-anchor", "end")
+				.text("Event");
+		};
+	});
+    </script>
+</body>
+</html>

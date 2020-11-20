@@ -1,0 +1,104 @@
+body,
+	html {
+		height: 100%;
+	}
+	.bg-img {
+		/* The image used */
+		background-image: url("../static/background.png");
+		/* Control the height of the image */
+		min-height: 800px;
+		max-width: 1060px;
+		/* Center and scale the image nicely */
+		background-position: left;
+		background-repeat: no-repeat;
+		background-size: cover;
+        position: relative;
+        width: 80%;
+        margin: 0 auto;
+	}
+	/* Add styles to the form container */
+
+	.container {
+		position: absolute;
+		left: 40px;
+		bottom: 20px;
+		margin: 20px;
+		height: 470px;
+		max-width: 400px;
+		padding: 16px;
+		background-color: white;
+	}
+
+	.lbl {
+		padding-top: 1em;
+	}
+	
+	#drive_time {
+	  height: 20px;
+	  width: 145px;
+	}
+
+	select,
+	option {
+		font-size: 12px;
+        font: sans-serif;
+	}
+
+  	.lbl img {
+		padding-left: 0em;
+		width: 28px;
+		height: 29px;
+		vertical-align: sub;
+	}
+
+	.lbl input {
+		vertical-align: sub;
+	}
+
+	#imagespotify {
+		padding-left: .3em;
+		width: 20px;
+		height: 20px;
+		vertical-align: sub;
+	}
+
+	#leave_date {
+		vertical-align: middle;
+	}
+
+	.button {
+        transition-duration: 0.4s;
+        padding: 12px 28px;
+		border-style: outset;
+		border-radius: 12px;;
+		background-color: #4CAF50;
+		color: white;
+        font: 2em sans-serif; 
+        width: 80px;
+        font-size: 18px;
+        text-align: center;
+		text-decoration: none;
+        display: inline-block;
+	}
+
+	.button:hover {
+		background-color: #4169E1;
+  		color: #ffffff;
+    }
+    #visualization{
+        position: relative;
+        width: 80%;
+        margin: 0 auto;
+        max-width: 1060px;
+        padding-top: 20px;
+    } 
+    
+    #map-container {
+		height: 450px;
+        width: 700px;
+        display: inline-block;
+	}
+	#map-legend {
+        position: absolute;
+        display: inline-block;
+	}
